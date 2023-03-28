@@ -55,30 +55,17 @@ const createPatrioServer = (): Express => {
 
   app.post('/stock', expressAsyncHandler(async (req: TypedRequestBody<{ stock: string }>, res: any) => {
     const stock = req.body.stock
-    console.log(stock)
 
-    const values = stock.split(',')
-    const nof = parseInt(values[0])
-    let nom = parseInt(values[3])
-    // vhas
+    const nof = parseInt(stock)
 
-    if (nom < 0) {
-      nom = 0
-    }
-
-    const motor = await prisma.rawMaterial.findFirst({ where: { name: 'Motor' } })
     const frame = await prisma.rawMaterial.findFirst({ where: { name: 'Frame' } })
 
     try {
-      if (motor?.count !== nom) {
-        await prisma.rawMaterial.updateMany({ where: { name: 'Motor' }, data: { count: { set: nom } } })
-      }
-
       if (frame?.count !== nof) {
         await prisma.rawMaterial.updateMany({ where: { name: 'Frame' }, data: { count: { set: nof } } })
       }
 
-      if (frame?.count !== nof || motor?.count !== nom) {
+      if (frame?.count !== nof) {
         io.emit('stock')
       }
 
