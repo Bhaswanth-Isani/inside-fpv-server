@@ -97,9 +97,13 @@ const createPatrioServer = (): Express => {
 
     const raw = await prisma.rawMaterial.findFirst()
 
+    const drone = await prisma.drone.findUnique({ where: { rfid } })
+
     try {
-      await prisma.drone.create({ data: { rfid, type: 'TYPE1', stage: 'PRODUCTION', rawMaterials: { connect: { id: raw?.id } } } })
-      io.emit('stage1')
+      if (drone !== null) {
+        await prisma.drone.create({ data: { rfid, type: 'TYPE1', stage: 'PRODUCTION', rawMaterials: { connect: { id: raw?.id } } } })
+        io.emit('stage1')
+      }
       res.send('Successfully posted')
     } catch (e) {
       console.log(e)
@@ -109,9 +113,13 @@ const createPatrioServer = (): Express => {
   app.post('/stage2', expressAsyncHandler(async (req: TypedRequestBody<{ rfid: string }>, res: any) => {
     const rfid = req.body.rfid
 
+    const drone = await prisma.drone.findFirst({ where: { stage: 'TESTING', rfid } })
+
     try {
-      await prisma.drone.update({ where: { rfid }, data: { stage: 'TESTING' } })
-      io.emit('stage2')
+      if (drone === null) {
+        await prisma.drone.update({ where: { rfid }, data: { stage: 'TESTING' } })
+        io.emit('stage2')
+      }
       res.send('Successfully posted')
     } catch (e) {
       console.log(e)
@@ -121,9 +129,13 @@ const createPatrioServer = (): Express => {
   app.post('/stage3', expressAsyncHandler(async (req: TypedRequestBody<{ rfid: string }>, res: any) => {
     const rfid = req.body.rfid
 
+    const drone = await prisma.drone.findFirst({ where: { stage: 'READY', rfid } })
+
     try {
-      await prisma.drone.update({ where: { rfid }, data: { stage: 'READY' } })
-      io.emit('stage3')
+      if (drone === null) {
+        await prisma.drone.update({ where: { rfid }, data: { stage: 'READY' } })
+        io.emit('stage3')
+      }
       res.send('Successfully posted')
     } catch (e) {
       console.log(e)
