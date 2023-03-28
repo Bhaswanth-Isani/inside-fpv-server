@@ -53,7 +53,7 @@ const createPatrioServer = (): Express => {
     }
   }))
 
-  app.post('/stock', expressAsyncHandler(async (req: TypedRequestBody<{ stock: string, buffer: string }>, res: any) => {
+  app.post('/stock', expressAsyncHandler(async (req: TypedRequestBody<{ stock: string }>, res: any) => {
     const stock = req.body.stock
     const values = stock.split(',')
     const nof = parseInt(values[0])
