@@ -1,6 +1,6 @@
 import express, { type Express } from 'express'
 import cors from 'cors'
-import { io } from '..'
+// import { io } from '..'
 import { type TypedRequestBody } from '../typedRequest'
 import prisma from './prisma'
 import expressAsyncHandler from 'express-async-handler'
@@ -37,10 +37,10 @@ const createPatrioServer = (): Express => {
             data: { nod, nof, nom, buffer }
           }
         )
-        io.emit('stock', { nod, nof, nom })
+        // io.emit('stock', { nod, nof, nom })
       } else {
         await prisma.inventory.create({ data: { nod, nof, nom, buffer } })
-        io.emit('stock', { nod, nof, nom })
+        // io.emit('stock', { nod, nof, nom })
       }
       res.status(200).send('Successfully Posted')
     } catch (e) {
@@ -59,7 +59,7 @@ const createPatrioServer = (): Express => {
 
     try {
       await prisma.product.create({ data: { rfid, stage_1: 1, stage_2: 0, stage_3: 0, stage_4: 0 } })
-      io.emit('stage1')
+      // io.emit('stage1')
       res.send('Successfully posted')
     } catch (e) {
       console.log(e)
@@ -71,7 +71,7 @@ const createPatrioServer = (): Express => {
 
     try {
       await prisma.product.update({ where: { rfid }, data: { stage_1: 0, stage_2: 1, stage_3: 0, stage_4: 0 } })
-      io.emit('stage2')
+      // io.emit('stage2')
       res.send('Successfully posted')
     } catch (e) {
       console.log(e)
@@ -83,7 +83,7 @@ const createPatrioServer = (): Express => {
 
     try {
       await prisma.product.update({ where: { rfid }, data: { stage_1: 0, stage_2: 0, stage_3: 1, stage_4: 0 } })
-      io.emit('stage3')
+      // io.emit('stage3')
       res.send('Successfully posted')
     } catch (e) {
       console.log(e)
@@ -103,7 +103,7 @@ const createPatrioServer = (): Express => {
           where: { id: order[i].id },
           data: { stage_4: 1, stage_3: 0 }
         })
-        io.emit('stage4')
+        // io.emit('stage4')
       }
       res.send({ message: 'order successful' })
     }
