@@ -69,11 +69,11 @@ const createPatrioServer = (): Express => {
 
     try {
       if (motor?.count !== nom) {
-        await prisma.rawMaterial.updateMany({ where: { name: 'Motor' }, data: { count: nom } })
+        await prisma.rawMaterial.updateMany({ where: { name: 'Motor' }, data: { count: { set: nom } } })
       }
 
       if (frame?.count !== nof) {
-        await prisma.rawMaterial.updateMany({ where: { name: 'Frame' }, data: { count: nof } })
+        await prisma.rawMaterial.updateMany({ where: { name: 'Frame' }, data: { count: { set: nof } } })
       }
 
       if (frame?.count !== nof || motor?.count !== nom) {
