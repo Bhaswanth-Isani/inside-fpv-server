@@ -1,6 +1,6 @@
 import express, { type Express } from 'express'
 import cors from 'cors'
-// import { io } from '..'
+import { io } from '..'
 import { type TypedRequestBody } from '../typedRequest'
 import prisma from './prisma'
 import expressAsyncHandler from 'express-async-handler'
