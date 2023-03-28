@@ -98,6 +98,7 @@ const createPatrioServer = (): Express => {
           where: { id: order[i].id },
           data: { stage_4: 1, stage_3: 0 }
         })
+        io.emit('stage4')
       }
       res.send({ message: 'order successful' })
     }
