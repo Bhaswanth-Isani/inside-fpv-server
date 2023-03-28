@@ -55,10 +55,10 @@ const createPatrioServer = (): Express => {
   }))
 
   app.post('/stage1', expressAsyncHandler(async (req: TypedRequestBody<{ rfid: string }>, res: any) => {
-    const id = req.body.rfid
+    const rfid = req.body.rfid
 
     try {
-      await prisma.product.create({ data: { id, stage_1: 1, stage_2: 0, stage_3: 0, stage_4: 0 } })
+      await prisma.product.create({ data: { rfid, stage_1: 1, stage_2: 0, stage_3: 0, stage_4: 0 } })
       io.emit('stage1')
       res.send('Successfully posted')
     } catch (e) {
@@ -67,10 +67,10 @@ const createPatrioServer = (): Express => {
   }))
 
   app.post('/stage2', expressAsyncHandler(async (req: TypedRequestBody<{ rfid: string }>, res: any) => {
-    const id = req.body.rfid
+    const rfid = req.body.rfid
 
     try {
-      await prisma.product.update({ where: { id }, data: { stage_1: 0, stage_2: 1, stage_3: 0, stage_4: 0 } })
+      await prisma.product.update({ where: { rfid }, data: { stage_1: 0, stage_2: 1, stage_3: 0, stage_4: 0 } })
       io.emit('stage2')
       res.send('Successfully posted')
     } catch (e) {
@@ -79,10 +79,10 @@ const createPatrioServer = (): Express => {
   }))
 
   app.post('/stage3', expressAsyncHandler(async (req: TypedRequestBody<{ rfid: string }>, res: any) => {
-    const id = req.body.rfid
+    const rfid = req.body.rfid
 
     try {
-      await prisma.product.update({ where: { id }, data: { stage_1: 0, stage_2: 0, stage_3: 1, stage_4: 0 } })
+      await prisma.product.update({ where: { rfid }, data: { stage_1: 0, stage_2: 0, stage_3: 1, stage_4: 0 } })
       io.emit('stage3')
       res.send('Successfully posted')
     } catch (e) {
@@ -112,13 +112,15 @@ const createPatrioServer = (): Express => {
   app.get('/number', expressAsyncHandler(async (_: any, res: any) => {
     try {
       const array1 = await prisma.product.findMany({ where: { stage_1: 1 } })
-      const array2 = await prisma.product.findMany({ where: { stage_1: 2 } })
-      const array3 = await prisma.product.findMany({ where: { stage_1: 3 } })
+      const array2 = await prisma.product.findMany({ where: { stage_2: 1 } })
+      const array3 = await prisma.product.findMany({ where: { stage_3: 1 } })
+      const array4 = await prisma.product.findMany({ where: { stage_4: 1 } })
 
       res.json({
         stage_1: array1.length,
         stage_2: array2.length,
-        stage_3: array3.length
+        stage_3: array3.length,
+        stage_4: array4.length
       })
     } catch (e) {
       console.log(e)

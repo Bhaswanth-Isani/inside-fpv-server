@@ -16,7 +16,8 @@ model Inventory {
 }
 
 model Product {
-  id      String @id @map("_id") @db.ObjectId
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  rfid    String @unique
   stage_1 Int
   stage_2 Int
   stage_3 Int
