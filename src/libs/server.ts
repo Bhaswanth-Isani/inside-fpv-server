@@ -58,6 +58,7 @@ const createPatrioServer = (): Express => {
     const values = stock.split(',')
     const nof = parseInt(values[0])
     let nom = parseInt(values[3])
+    // vhas
 
     if (nom < 0) {
       nom = 0
