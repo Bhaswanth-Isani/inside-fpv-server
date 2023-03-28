@@ -40,7 +40,7 @@ const createPatrioServer = (): Express => {
         io.emit('stock', nod, nof, nom)
       } else {
         await prisma.inventory.create({ data: { nod, nof, nom, buffer } })
-        io.emit('stock', nod, nof, nom)
+        io.emit('stock', { nod, nof, nom })
       }
       res.status(200).send('Successfully Posted')
     } catch (e) {
