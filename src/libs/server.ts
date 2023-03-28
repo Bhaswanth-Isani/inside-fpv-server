@@ -12,36 +12,73 @@ const createPatrioServer = (): Express => {
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
 
+  app.post('/create-raw', expressAsyncHandler(async (req: TypedRequestBody<{ name: string, shelf: string, count: number }>, res: any) => {
+    const name = req.body.name
+    const shelf = req.body.shelf
+    const count = req.body.count
+
+    try {
+      const material = await prisma.rawMaterial.create({ data: { name, shelf, count } })
+
+      res.status(200).json({
+        id: material.id,
+        name: material.name,
+        shelf: material.shelf,
+        count: material.count
+      })
+    } catch (error) {
+      res.send(500)
+    }
+  }))
+
+  app.get('/raw', expressAsyncHandler(async (_, res: any) => {
+    try {
+      const materials = await prisma.rawMaterial.findMany()
+
+      res.status(200).json({ materials })
+    } catch (error) {
+      res.send(500)
+    }
+  }))
+
+  app.post('/drone', expressAsyncHandler(async (req: TypedRequestBody<{ rfid: string, type: 'TYPE1' | 'TYPE2' }>, res: any) => {
+    const raw = await prisma.rawMaterial.findFirst()
+
+    try {
+      const drone = await prisma.drone.create({ data: { rfid: req.body.rfid, type: req.body.type, stage: 'PRODUCTION', rawMaterials: { connect: { id: raw?.id } } } })
+
+      res.status(200).json({ drone })
+    } catch (error) {
+      res.status(500)
+    }
+  }))
+
   app.post('/stock', expressAsyncHandler(async (req: TypedRequestBody<{ stock: string, buffer: string }>, res: any) => {
     const stock = req.body.stock
     const values = stock.split(',')
-    const nod = parseInt(values[0])
-    const nof = parseInt(values[1])
-    const nom = parseInt(values[2])
-    let buffer = parseInt(req.body.buffer)
+    const nof = parseInt(values[0])
+    let nom = parseInt(values[3])
 
-    if (Number.isNaN(buffer)) {
-      buffer = 0
+    if (nom < 0) {
+      nom = 0
     }
 
-    const document = await prisma.inventory.findFirst()
+    const motor = await prisma.rawMaterial.findFirst({ where: { name: 'Motor' } })
+    const frame = await prisma.rawMaterial.findFirst({ where: { name: 'Frame' } })
 
     try {
-      if (
-        (document != null) &&
-        (document.nod !== nod || document.nof !== nof || document.nom !== nom)
-      ) {
-        await prisma.inventory.update(
-          {
-            where: { id: document.id },
-            data: { nod, nof, nom, buffer }
-          }
-        )
-        io.emit('stock', { nod, nof, nom })
-      } else {
-        await prisma.inventory.create({ data: { nod, nof, nom, buffer } })
-        io.emit('stock', { nod, nof, nom })
+      if (motor?.count !== nom) {
+        await prisma.rawMaterial.updateMany({ where: { name: 'Motor' }, data: { count: nom } })
       }
+
+      if (frame?.count !== nof) {
+        await prisma.rawMaterial.updateMany({ where: { name: 'Frame' }, data: { count: nof } })
+      }
+
+      if (frame?.count !== nof || motor?.count !== nom) {
+        io.emit('stock')
+      }
+
       res.status(200).send('Successfully Posted')
     } catch (e) {
       console.log(e)
@@ -50,15 +87,17 @@ const createPatrioServer = (): Express => {
   }))
 
   app.get('/stock', expressAsyncHandler(async (_: any, res: any) => {
-    const inventory = await prisma.inventory.findFirst()
+    const inventory = await prisma.rawMaterial.findMany()
     res.send(inventory)
   }))
 
   app.post('/stage1', expressAsyncHandler(async (req: TypedRequestBody<{ rfid: string }>, res: any) => {
     const rfid = req.body.rfid
 
+    const raw = await prisma.rawMaterial.findFirst()
+
     try {
-      await prisma.product.create({ data: { rfid, stage_1: 1, stage_2: 0, stage_3: 0, stage_4: 0 } })
+      await prisma.drone.create({ data: { rfid, type: 'TYPE1', stage: 'PRODUCTION', rawMaterials: { connect: { id: raw?.id } } } })
       io.emit('stage1')
       res.send('Successfully posted')
     } catch (e) {
@@ -70,7 +109,7 @@ const createPatrioServer = (): Express => {
     const rfid = req.body.rfid
 
     try {
-      await prisma.product.update({ where: { rfid }, data: { stage_1: 0, stage_2: 1, stage_3: 0, stage_4: 0 } })
+      await prisma.drone.update({ where: { rfid }, data: { stage: 'TESTING' } })
       io.emit('stage2')
       res.send('Successfully posted')
     } catch (e) {
@@ -82,7 +121,7 @@ const createPatrioServer = (): Express => {
     const rfid = req.body.rfid
 
     try {
-      await prisma.product.update({ where: { rfid }, data: { stage_1: 0, stage_2: 0, stage_3: 1, stage_4: 0 } })
+      await prisma.drone.update({ where: { rfid }, data: { stage: 'READY' } })
       io.emit('stage3')
       res.send('Successfully posted')
     } catch (e) {
@@ -93,15 +132,15 @@ const createPatrioServer = (): Express => {
   app.post('/orders', expressAsyncHandler(async (req: any, res: any) => {
     const d = req.body.drones
     console.log(req.body)
-    const order = await prisma.product.findMany({ where: { stage_3: 1 } })
+    const order = await prisma.drone.findMany({ where: { stage: 'READY' } })
 
     if (order.length < d) {
       res.send({ message: 'out of stock' })
     } else {
       for (let i = 0; i < d; i++) {
-        await prisma.product.update({
+        await prisma.drone.update({
           where: { id: order[i].id },
-          data: { stage_4: 1, stage_3: 0 }
+          data: { stage: 'ORDERED' }
         })
         io.emit('stage4')
       }
@@ -111,10 +150,10 @@ const createPatrioServer = (): Express => {
 
   app.get('/number', expressAsyncHandler(async (_: any, res: any) => {
     try {
-      const array1 = await prisma.product.findMany({ where: { stage_1: 1 } })
-      const array2 = await prisma.product.findMany({ where: { stage_2: 1 } })
-      const array3 = await prisma.product.findMany({ where: { stage_3: 1 } })
-      const array4 = await prisma.product.findMany({ where: { stage_4: 1 } })
+      const array1 = await prisma.drone.findMany({ where: { stage: 'PRODUCTION' } })
+      const array2 = await prisma.drone.findMany({ where: { stage: 'TESTING' } })
+      const array3 = await prisma.drone.findMany({ where: { stage: 'READY' } })
+      const array4 = await prisma.drone.findMany({ where: { stage: 'ORDERED' } })
 
       res.json({
         stage_1: array1.length,

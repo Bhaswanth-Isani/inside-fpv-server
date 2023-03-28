@@ -7,19 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Inventory {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  nof    Int
-  nod    Int
-  nom    Int
-  buffer Int
+model RawMaterial {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  count    Int
+  shelf    String   @unique
+  droneIDs String[] @db.ObjectId
+  drones   Drone[]  @relation(fields: [droneIDs], references: [id])
 }
 
-model Product {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  rfid    String @unique
-  stage_1 Int
-  stage_2 Int
-  stage_3 Int
-  stage_4 Int
+model Drone {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  rfid           String        @unique
+  stage          Stage
+  type           DroneType
+  rawMaterialIDs String[]      @db.ObjectId
+  rawMaterials   RawMaterial[] @relation(fields: [rawMaterialIDs], references: [id])
+}
+
+enum Stage {
+  PRODUCTION
+  TESTING
+  READY
+  ORDERED
+}
+
+enum DroneType {
+  TYPE1
+  TYPE2
 }
