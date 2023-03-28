@@ -100,7 +100,7 @@ const createPatrioServer = (): Express => {
     const drone = await prisma.drone.findUnique({ where: { rfid } })
 
     try {
-      if (drone !== null) {
+      if (drone === null) {
         await prisma.drone.create({ data: { rfid, type: 'TYPE1', stage: 'PRODUCTION', rawMaterials: { connect: { id: raw?.id } } } })
         io.emit('stage1')
       }
