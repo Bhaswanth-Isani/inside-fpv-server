@@ -101,6 +101,7 @@ const createPatrioServer = (): Express => {
 
     try {
       if (drone === null) {
+        await prisma.rawMaterial.update({ where: { id: raw?.id }, data: { count: (raw?.count ?? 0) - 4 } })
         await prisma.drone.create({ data: { rfid, type: 'TYPE1', stage: 'PRODUCTION', rawMaterials: { connect: { id: raw?.id } } } })
         io.emit('stage1')
       }
@@ -155,7 +156,7 @@ const createPatrioServer = (): Express => {
           where: { id: order[i].id },
           data: { stage: 'ORDERED' }
         })
-        // io.emit('stage4')
+        io.emit('stage4')
       }
       res.send({ message: 'order successful' })
     }
