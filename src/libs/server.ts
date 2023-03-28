@@ -18,7 +18,11 @@ const createPatrioServer = (): Express => {
     const nod = parseInt(values[0])
     const nof = parseInt(values[1])
     const nom = parseInt(values[2])
-    const buffer = parseInt(req.body.buffer)
+    let buffer = parseInt(req.body.buffer)
+
+    if (Number.isNaN(buffer)) {
+      buffer = 0
+    }
 
     const document = await prisma.inventory.findFirst()
 
@@ -39,7 +43,8 @@ const createPatrioServer = (): Express => {
         io.emit('stock', nod, nof, nom)
       }
       res.status(200).send('Successfully Posted')
-    } catch (_) {
+    } catch (e) {
+      console.log(e)
       res.status(200).send('Not Posted')
     }
   }))
